@@ -3,11 +3,11 @@ import { RecipeCard } from './components/RecipeCard';
 import { RecipeModal } from './components/RecipeModal';
 import { Recipe, FilterState } from './types';
 import { getInitialRecipes, searchRecipes } from './services/recipeService';
-import { Loader2 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { FilterBar } from './components/FilterBar';
 import { WavyHero } from './components/WavyHero';
 import { SearchChips } from './components/SearchChips';
+import { SkeletonCard } from './components/SkeletonCard';
 
 type View = 'discover' | 'saved';
 
@@ -143,11 +143,8 @@ export default function App() {
       {/* Grid */}
       <main className="px-4 pb-24 md:px-8">
         {loading && recipes.length === 0 && view === 'discover' ? (
-          <div className="flex flex-col items-center justify-center py-32 gap-4">
-            <Loader2 className="animate-spin" size={36} style={{ color: '#2D5A2D' }} />
-            <p className="font-display font-bold uppercase tracking-widest text-sm" style={{ color: '#2D5A2D' }}>
-              Curating recipes…
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         ) : (
           <div className={cn(

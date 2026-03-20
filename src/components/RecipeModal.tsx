@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Clock, ChefHat, Flame, Utensils, Heart, Share2, Check } from 'lucide-react';
+import { X, Clock, ChefHat, Flame, Utensils, Heart, Share2, Check, UtensilsCrossed } from 'lucide-react';
 import { Recipe } from '../types';
 import Markdown from 'react-markdown';
+import { CookMode } from './CookMode';
 
 interface RecipeModalProps {
   recipe: Recipe | null;
@@ -11,10 +12,28 @@ interface RecipeModalProps {
   onClose: () => void;
 }
 
+const BURST_COLORS = ['#A8D5A2', '#1C3A1C', '#FFD700', '#FF8C69', '#F5F0E8'];
+const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
 export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSaveToggle, onClose }) => {
   const [copied, setCopied] = React.useState(false);
+  const [cookMode, setCookMode] = React.useState(false);
+  const [burstKey, setBurstKey] = React.useState(0);
+
+  const handleSave = () => {
+    if (!isSaved) setBurstKey(k => k + 1);
+    onSaveToggle();
+  };
 
   if (!recipe) return null;
+
+  if (cookMode) {
+    return (
+      <AnimatePresence>
+        <CookMode recipe={recipe} onClose={() => setCookMode(false)} />
+      </AnimatePresence>
+    );
+  }
 
   const handleShare = async () => {
     try {
@@ -57,15 +76,51 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSav
           >
             <div className="flex gap-2">
               <button
-                onClick={onSaveToggle}
+                onClick={() => setCookMode(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
-                style={isSaved
-                  ? { backgroundColor: '#1C3A1C', color: '#F5F0E8' }
-                  : { backgroundColor: '#EDE7D9', color: '#1C3A1C' }}
+                style={{ backgroundColor: '#1C3A1C', color: '#F5F0E8' }}
               >
-                <Heart size={14} fill={isSaved ? 'currentColor' : 'none'} />
-                {isSaved ? 'Saved' : 'Save'}
+                <UtensilsCrossed size={14} />
+                Cook
               </button>
+              <div className="relative">
+                <button
+                  onClick={handleSave}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
+                  style={isSaved
+                    ? { backgroundColor: '#1C3A1C', color: '#F5F0E8' }
+                    : { backgroundColor: '#EDE7D9', color: '#1C3A1C' }}
+                >
+                  <Heart size={14} fill={isSaved ? 'currentColor' : 'none'} />
+                  {isSaved ? 'Saved' : 'Save'}
+                </button>
+                <AnimatePresence>
+                  {burstKey > 0 && BURST_ANGLES.map((angle, i) => (
+                    <motion.span
+                      key={`${burstKey}-${angle}`}
+                      initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                      animate={{
+                        opacity: 0,
+                        x: Math.cos((angle * Math.PI) / 180) * 28,
+                        y: Math.sin((angle * Math.PI) / 180) * 28,
+                        scale: 0.4,
+                      }}
+                      exit={{}}
+                      transition={{ duration: 0.5, ease: 'easeOut', delay: i * 0.02 }}
+                      className="pointer-events-none absolute rounded-full"
+                      style={{
+                        width: 7,
+                        height: 7,
+                        top: '50%',
+                        left: '50%',
+                        marginTop: -3.5,
+                        marginLeft: -3.5,
+                        backgroundColor: BURST_COLORS[i % BURST_COLORS.length],
+                      }}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
               <button
                 onClick={handleShare}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
