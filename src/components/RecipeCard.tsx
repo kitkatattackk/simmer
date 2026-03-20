@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react';
 import { Recipe } from '../types';
-import { Clock, ChefHat, Heart, Share2, Check, X } from 'lucide-react';
+import { Clock, ChefHat, Heart, Share2, Check, X, Flame } from 'lucide-react';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -15,6 +15,13 @@ const SPICE_COLORS: Record<string, { bg: string; text: string }> = {
   'Medium':    { bg: '#FDECC8', text: '#7A4B00' },
   'Hot':       { bg: '#FDDAD6', text: '#8B1A0E' },
   'Extra Hot': { bg: '#F0D0F0', text: '#5A0F5A' },
+};
+
+const SPICE_ANIM: Record<string, { duration: number; scale: number[]; opacity: number[]; y?: number[] }> = {
+  'Mild':      { duration: 2.2, scale: [1, 1.1, 1],        opacity: [0.6, 1, 0.6] },
+  'Medium':    { duration: 1.2, scale: [1, 1.18, 1],       opacity: [0.5, 1, 0.5] },
+  'Hot':       { duration: 0.65, scale: [0.9, 1.25, 0.9],  opacity: [0.4, 1, 0.4], y: [0, -1, 0] },
+  'Extra Hot': { duration: 0.35, scale: [0.85, 1.35, 0.85],opacity: [0.3, 1, 0.3], y: [0, -2, 0] },
 };
 
 const BURST_COLORS = ['#A8D5A2', '#1C3A1C', '#FFD700', '#FF8C69', '#F5F0E8'];
@@ -109,9 +116,22 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, isSaved, onSaveT
         <div className="flex items-start justify-between gap-2 mb-4">
           <div className="flex flex-wrap gap-1.5">
             <span
-              className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
+              className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
               style={{ backgroundColor: spice.bg, color: spice.text }}
             >
+              {SPICE_ANIM[recipe.spiciness] && (
+                <motion.span
+                  animate={{
+                    scale: SPICE_ANIM[recipe.spiciness].scale,
+                    opacity: SPICE_ANIM[recipe.spiciness].opacity,
+                    y: SPICE_ANIM[recipe.spiciness].y ?? [0, 0, 0],
+                  }}
+                  transition={{ duration: SPICE_ANIM[recipe.spiciness].duration, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{ display: 'inline-flex' }}
+                >
+                  <Flame size={10} fill="currentColor" />
+                </motion.span>
+              )}
               {recipe.spiciness}
             </span>
             <span

@@ -3,6 +3,7 @@ import { RecipeCard } from './components/RecipeCard';
 import { RecipeModal } from './components/RecipeModal';
 import { Recipe, FilterState } from './types';
 import { getInitialRecipes, searchRecipes } from './services/recipeService';
+import { motion } from 'motion/react';
 import { cn } from './lib/utils';
 import { FilterBar } from './components/FilterBar';
 import { WavyHero } from './components/WavyHero';
@@ -151,14 +152,20 @@ export default function App() {
             "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 transition-opacity duration-300",
             loading ? "opacity-40 pointer-events-none" : "opacity-100"
           )}>
-            {displayedRecipes.map((recipe) => (
-              <RecipeCard
+            {displayedRecipes.map((recipe, i) => (
+              <motion.div
                 key={recipe.id}
-                recipe={recipe}
-                isSaved={savedRecipes.some(r => r.id === recipe.id)}
-                onSaveToggle={() => toggleSave(recipe)}
-                onClick={setSelectedRecipe}
-              />
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: 'easeOut', delay: Math.min(i * 0.06, 0.5) }}
+              >
+                <RecipeCard
+                  recipe={recipe}
+                  isSaved={savedRecipes.some(r => r.id === recipe.id)}
+                  onSaveToggle={() => toggleSave(recipe)}
+                  onClick={setSelectedRecipe}
+                />
+              </motion.div>
             ))}
           </div>
         )}
