@@ -1,7 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 
-const LINES = ['FIND YOUR PERFECT', 'RECIPE.'];
+const LINES: { text: string; emphasis: string }[] = [
+  { text: 'FIND YOUR PERFECT', emphasis: '' },
+  { text: 'RECIPE.',           emphasis: 'R' },
+  { text: '- ALEX',            emphasis: 'X' },
+];
 const MAX_ARC = 70;
 const SPRING = { type: 'spring' as const, stiffness: 90, damping: 14, mass: 0.9 };
 
@@ -13,21 +17,27 @@ const seededRand = (seed: number) => {
 
 interface WavyLineProps {
   text: string;
+  emphasis: string;
   mouseNorm: number;
   delay: number;
   seedOffset: number;
 }
 
-const WavyLine = ({ text, mouseNorm, delay, seedOffset }: WavyLineProps) => {
+const WavyLine = ({ text, emphasis, mouseNorm, delay, seedOffset }: WavyLineProps) => {
   const chars = text.split('');
   const n = chars.length;
 
   const jitter = useMemo(() =>
-    chars.map((_, i) => ({
-      rotate: (seededRand(seedOffset + i * 3) - 0.5) * 10,     // ±5deg
-      scale:   0.92 + seededRand(seedOffset + i * 3 + 1) * 0.16, // 0.92–1.08
-      baseY:  (seededRand(seedOffset + i * 3 + 2) - 0.5) * 14,  // ±7px baseline nudge
-    })),
+    chars.map((char, i) => {
+      const loud = emphasis.toUpperCase().includes(char.toUpperCase()) && char.trim() !== '';
+      return {
+        rotate: (seededRand(seedOffset + i * 3) - 0.5) * (loud ? 80 : 10),
+        scale:   loud
+          ? 0.75 + seededRand(seedOffset + i * 3 + 1) * 0.6
+          : 0.92 + seededRand(seedOffset + i * 3 + 1) * 0.16,
+        baseY:  (seededRand(seedOffset + i * 3 + 2) - 0.5) * (loud ? 48 : 14),
+      };
+    }),
   []);
 
   return (
@@ -47,7 +57,8 @@ const WavyLine = ({ text, mouseNorm, delay, seedOffset }: WavyLineProps) => {
       {chars.map((char, i) => {
         const t = n > 1 ? i / (n - 1) : 0.5;
         const arc = 0.35 + 0.65 * Math.sin(Math.PI * t);
-        const yOffset = jitter[i].baseY + (mouseNorm - 0.5) * MAX_ARC * arc;
+        const loud = emphasis.toUpperCase().includes(char.toUpperCase()) && char.trim() !== '';
+        const yOffset = jitter[i].baseY + (mouseNorm - 0.5) * MAX_ARC * arc * (loud ? 3.5 : 1);
 
         return (
           <motion.span
@@ -88,8 +99,8 @@ export const WavyHero = () => {
 
   return (
     <h1 className="leading-none mb-10" style={{ overflow: 'visible' }}>
-      {LINES.map((line, i) => (
-        <WavyLine key={line} text={line} mouseNorm={mouseNorm} delay={i * 0.15} seedOffset={i * 100} />
+      {LINES.map(({ text, emphasis }, i) => (
+        <WavyLine key={text} text={text} emphasis={emphasis} mouseNorm={mouseNorm} delay={i * 0.15} seedOffset={i * 100} />
       ))}
     </h1>
   );

@@ -18,4 +18,5 @@ export interface FilterState {
   maxTime: string;
   searchQuery: string;
   allergy: string;
+  chef: string;
 }

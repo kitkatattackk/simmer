@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Clock, ChefHat, Flame, Utensils, Heart, Share2, Check, UtensilsCrossed } from 'lucide-react';
+import { X, Clock, ChefHat, Flame, Utensils, Heart, Share2, Check, UtensilsCrossed, ImageDown } from 'lucide-react';
 import { Recipe } from '../types';
 import Markdown from 'react-markdown';
 import { CookMode } from './CookMode';
+import html2canvas from 'html2canvas';
 
 interface RecipeModalProps {
   recipe: Recipe | null;
@@ -17,8 +18,10 @@ const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
 
 export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSaveToggle, onClose }) => {
   const [copied, setCopied] = React.useState(false);
+  const [capturing, setCapturing] = React.useState(false);
   const [cookMode, setCookMode] = React.useState(false);
   const [burstKey, setBurstKey] = React.useState(0);
+  const contentRef = React.useRef<HTMLDivElement>(null);
 
   const handleSave = () => {
     if (!isSaved) setBurstKey(k => k + 1);
@@ -36,15 +39,44 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSav
   }
 
   const handleShare = async () => {
+    if (!contentRef.current || capturing) return;
+    setCapturing(true);
     try {
-      if (navigator.share) {
-        await navigator.share({ title: recipe.title, text: recipe.description, url: window.location.href });
+      const el = contentRef.current;
+      const canvas = await html2canvas(el, {
+        backgroundColor: '#F5F0E8',
+        scale: 2,
+        useCORS: true,
+        width: el.offsetWidth,
+        height: el.scrollHeight,
+        windowWidth: el.offsetWidth,
+        windowHeight: el.scrollHeight,
+        scrollY: 0,
+      });
+
+      const blob = await new Promise<Blob>((res) =>
+        canvas.toBlob(b => res(b!), 'image/png')
+      );
+      const file = new File([blob], `${recipe.title}.png`, { type: 'image/png' });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: recipe.title });
       } else {
-        await navigator.clipboard.writeText(`${recipe.title}\n\n${recipe.description}`);
+        // Fallback: download the image
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${recipe.title}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }
-    } catch {}
+    } catch (err) {
+      console.error('Share failed:', err);
+    } finally {
+      setCapturing(false);
+    }
   };
 
   return (
@@ -123,13 +155,14 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSav
               </div>
               <button
                 onClick={handleShare}
+                disabled={capturing}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
                 style={copied
                   ? { backgroundColor: '#2D5A2D', color: '#F5F0E8' }
-                  : { backgroundColor: '#EDE7D9', color: '#1C3A1C' }}
+                  : { backgroundColor: '#EDE7D9', color: '#1C3A1C', opacity: capturing ? 0.6 : 1 }}
               >
-                {copied ? <Check size={14} /> : <Share2 size={14} />}
-                {copied ? 'Copied!' : 'Share'}
+                {copied ? <Check size={14} /> : capturing ? <ImageDown size={14} className="animate-pulse" /> : <Share2 size={14} />}
+                {copied ? 'Saved!' : capturing ? 'Capturing…' : 'Share'}
               </button>
             </div>
             <button
@@ -142,7 +175,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSav
           </div>
 
           {/* Scrollable content */}
-          <div className="overflow-y-auto custom-scrollbar px-4 md:px-10 py-6 md:py-8">
+          <div ref={contentRef} className="overflow-y-auto custom-scrollbar px-4 md:px-10 py-6 md:py-8">
             {/* Badges */}
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ backgroundColor: '#D6EDD6', color: '#1C5C1C' }}>

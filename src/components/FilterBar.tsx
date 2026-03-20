@@ -18,6 +18,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, onSea
   const difficulties = ['All', 'Easy', 'Intermediate', 'Advanced'];
   const timeOptions = ['All', 'Under 15 mins', 'Under 30 mins', 'Under 60 mins'];
   const allergies = ['No Allergy Filter', 'Gluten-Free', 'Dairy-Free', 'Nut-Free', 'Egg-Free', 'Shellfish-Free', 'Soy-Free', 'Fish-Free'];
+  const chefs = ['All Chefs', 'Ina Garten'];
 
   return (
     <div className="flex flex-col gap-4">
@@ -62,6 +63,17 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, onSea
         </select>
         <select className={selectClass} style={selectStyle} value={filters.allergy} onChange={(e) => setFilters(prev => ({ ...prev, allergy: e.target.value }))} disabled={isLoading}>
           {allergies.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select
+          className={selectClass}
+          style={filters.chef !== 'All Chefs'
+            ? { ...selectStyle, backgroundColor: '#1C3A1C', color: '#F5F0E8', borderColor: '#1C3A1C' }
+            : selectStyle}
+          value={filters.chef}
+          onChange={(e) => setFilters(prev => ({ ...prev, chef: e.target.value }))}
+          disabled={isLoading}
+        >
+          {chefs.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
       </div>
     </div>

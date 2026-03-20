@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Recipe {
+  id           String   @id
+  title        String
+  description  String
+  meatType     String
+  spiciness    String
+  prepTime     String
+  difficulty   String
+  ingredients  String   // JSON array
+  instructions String
+  tags         String   // JSON array
+  createdAt    DateTime @default(now())
+
+  searches     SearchRecipe[]
+}
+
+model Search {
+  id        String         @id @default(cuid())
+  query     String
+  filters   String         // JSON-serialized FilterState
+  createdAt DateTime       @default(now())
+
+  recipes   SearchRecipe[]
+
+  @@unique([query, filters])
+}
+
+model SearchRecipe {
+  searchId String
+  recipeId String
+
+  search   Search @relation(fields: [searchId], references: [id])
+  recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+  @@id([searchId, recipeId])
+}

@@ -32,7 +32,7 @@ export default function App() {
   });
   const [filters, setFilters] = useState<FilterState>({
     meatType: 'All', spiciness: 'All', difficulty: 'All',
-    maxTime: 'All', searchQuery: '', allergy: 'No Allergy Filter',
+    maxTime: 'All', searchQuery: '', allergy: 'No Allergy Filter', chef: 'All Chefs',
   });
 
   useEffect(() => {
