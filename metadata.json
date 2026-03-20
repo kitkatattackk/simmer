@@ -1,0 +1,5 @@
+{
+  "name": "FlavorBoard",
+  "description": "A Pinterest-inspired recipe discovery app with smart filters for meat, spiciness, and more.",
+  "requestFramePermissions": []
+}

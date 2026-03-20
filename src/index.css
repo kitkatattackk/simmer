@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --font-logo: "Lilita One", ui-sans-serif, system-ui, sans-serif;
+  --color-cream: #F5F0E8;
+  --color-cream-dark: #EDE7D9;
+  --color-forest: #1C3A1C;
+  --color-forest-mid: #2D5A2D;
+  --color-forest-light: #4A8A4A;
+}
+
+@layer base {
+  body {
+    background-color: #F5F0E8;
+    color: #1C3A1C;
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: "Syne", ui-sans-serif, system-ui, sans-serif;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c5bfb3;
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a89e90;
+  }
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  font-weight: 700;
+  color: #1C3A1C;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+.markdown-body p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+.markdown-body ul, .markdown-body ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+.markdown-body li {
+  margin-bottom: 0.5rem;
+}
+.markdown-body strong {
+  font-weight: 600;
+  color: #1C3A1C;
+}
