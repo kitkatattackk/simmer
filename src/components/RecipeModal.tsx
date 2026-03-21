@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Clock, ChefHat, Flame, Utensils, Heart, Share2, Check, UtensilsCrossed, ImageDown } from 'lucide-react';
+import { X, Clock, ChefHat, Flame, Utensils, Heart, Share2, Check, UtensilsCrossed, ImageDown, ShoppingCart, Plus, Minus } from 'lucide-react';
 import { Recipe } from '../types';
 import Markdown from 'react-markdown';
 import { CookMode } from './CookMode';
@@ -11,12 +11,15 @@ interface RecipeModalProps {
   isSaved: boolean;
   onSaveToggle: () => void;
   onClose: () => void;
+  groceryList: string[];
+  onGroceryToggle: (item: string) => void;
+  onGroceryClear: (items: string[]) => void;
 }
 
 const BURST_COLORS = ['#A8D5A2', '#1C3A1C', '#FFD700', '#FF8C69', '#F5F0E8'];
 const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
 
-export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSaveToggle, onClose }) => {
+export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSaveToggle, onClose, groceryList, onGroceryToggle, onGroceryClear }) => {
   const [copied, setCopied] = React.useState(false);
   const [capturing, setCapturing] = React.useState(false);
   const [cookMode, setCookMode] = React.useState(false);
@@ -43,8 +46,9 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSav
     setCapturing(true);
     try {
       const el = contentRef.current;
+      const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#F5F0E8';
       const canvas = await html2canvas(el, {
-        backgroundColor: '#F5F0E8',
+        backgroundColor: bgColor,
         scale: 2,
         useCORS: true,
         width: el.offsetWidth,
@@ -99,32 +103,32 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSav
           exit={{ opacity: 0, y: 24, scale: 0.97 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
           className="relative w-full sm:max-w-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"
-          style={{ backgroundColor: '#F5F0E8' }}
+          style={{ backgroundColor: 'var(--surface)' }}
         >
           {/* Header bar */}
           <div
             className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 flex-shrink-0 border-b"
-            style={{ borderColor: 'rgba(28,58,28,0.12)' }}
+            style={{ borderColor: 'var(--border)' }}
           >
             <div className="flex gap-2">
               <button
                 onClick={() => setCookMode(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
                 style={{ backgroundColor: '#1C3A1C', color: '#F5F0E8' }}
               >
                 <UtensilsCrossed size={14} />
-                Cook
+                <span className="hidden sm:inline">Cook</span>
               </button>
               <div className="relative">
                 <button
                   onClick={handleSave}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
                   style={isSaved
                     ? { backgroundColor: '#1C3A1C', color: '#F5F0E8' }
-                    : { backgroundColor: '#EDE7D9', color: '#1C3A1C' }}
+                    : { backgroundColor: 'var(--surface-alt)', color: 'var(--on-surface)' }}
                 >
                   <Heart size={14} fill={isSaved ? 'currentColor' : 'none'} />
-                  {isSaved ? 'Saved' : 'Save'}
+                  <span className="hidden sm:inline">{isSaved ? 'Saved' : 'Save'}</span>
                 </button>
                 <AnimatePresence>
                   {burstKey > 0 && BURST_ANGLES.map((angle, i) => (
@@ -156,99 +160,205 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, isSaved, onSav
               <button
                 onClick={handleShare}
                 disabled={capturing}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
                 style={copied
                   ? { backgroundColor: '#2D5A2D', color: '#F5F0E8' }
-                  : { backgroundColor: '#EDE7D9', color: '#1C3A1C', opacity: capturing ? 0.6 : 1 }}
+                  : { backgroundColor: 'var(--surface-alt)', color: 'var(--on-surface)', opacity: capturing ? 0.6 : 1 }}
               >
                 {copied ? <Check size={14} /> : capturing ? <ImageDown size={14} className="animate-pulse" /> : <Share2 size={14} />}
-                {copied ? 'Saved!' : capturing ? 'Capturing…' : 'Share'}
+                <span className="hidden sm:inline">{copied ? 'Saved!' : capturing ? 'Capturing…' : 'Share'}</span>
               </button>
             </div>
             <button
               onClick={onClose}
               className="p-2 rounded-full transition-all"
-              style={{ backgroundColor: '#EDE7D9', color: '#1C3A1C' }}
+              style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--on-surface)' }}
             >
               <X size={18} />
             </button>
           </div>
 
           {/* Scrollable content */}
-          <div ref={contentRef} className="overflow-y-auto custom-scrollbar px-4 md:px-10 py-6 md:py-8">
-            {/* Badges */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ backgroundColor: '#D6EDD6', color: '#1C5C1C' }}>
-                {recipe.meatType}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ backgroundColor: '#FDECC8', color: '#7A4B00' }}>
-                {recipe.spiciness}
-              </span>
+          <div ref={contentRef} className="overflow-y-auto custom-scrollbar">
+
+            {/* Dark green hero — badges, title, description */}
+            <div className="px-6 md:px-10 pt-7 pb-8" style={{ backgroundColor: '#2D472C' }}>
+              {/* Badges */}
+              <div className="flex flex-wrap gap-2 mb-5">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#F5F0E8' }}>
+                  {recipe.meatType}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#F5F0E8' }}>
+                  {recipe.spiciness}
+                </span>
+              </div>
+
+              {/* Title */}
+              <h2 className="font-display font-extrabold uppercase leading-tight mb-3" style={{ fontSize: 'clamp(1.6rem, 5vw, 2.5rem)', color: '#F5F0E8' }}>
+                {recipe.title}
+              </h2>
+
+              {/* Description */}
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(245,240,232,0.75)' }}>
+                {recipe.description}
+              </p>
             </div>
 
-            {/* Title */}
-            <h2 className="font-display font-extrabold uppercase leading-tight mb-4" style={{ fontSize: 'clamp(1.6rem, 5vw, 2.5rem)', color: '#1C3A1C' }}>
-              {recipe.title}
-            </h2>
-
-            {/* Description */}
-            <p className="text-base leading-relaxed mb-8" style={{ color: '#4A6A4A' }}>
-              {recipe.description}
-            </p>
+            {/* Cream body */}
+            <div className="px-6 md:px-10 pt-7 pb-8 space-y-8" style={{ backgroundColor: 'var(--surface)' }}>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-3 mb-8">
-              <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ backgroundColor: '#EDE7D9' }}>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ backgroundColor: 'var(--surface-alt)' }}>
                 <Clock size={18} style={{ color: '#2D5A2D' }} />
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: '#1C3A1C', opacity: 0.5 }}>Time</p>
-                  <p className="text-sm font-semibold" style={{ color: '#1C3A1C' }}>{recipe.prepTime}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: 'var(--on-surface)', opacity: 0.5 }}>Time</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>{recipe.prepTime}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ backgroundColor: '#EDE7D9' }}>
+              <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ backgroundColor: 'var(--surface-alt)' }}>
                 <ChefHat size={18} style={{ color: '#2D5A2D' }} />
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: '#1C3A1C', opacity: 0.5 }}>Skill</p>
-                  <p className="text-sm font-semibold" style={{ color: '#1C3A1C' }}>{recipe.difficulty}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: 'var(--on-surface)', opacity: 0.5 }}>Skill</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>{recipe.difficulty}</p>
                 </div>
               </div>
             </div>
 
             {/* Ingredients */}
-            <section className="mb-8">
+            <section>
               <div className="flex items-center gap-2 mb-4">
                 <Utensils size={18} style={{ color: '#2D5A2D' }} />
-                <h3 className="font-display font-bold uppercase tracking-wide text-sm" style={{ color: '#1C3A1C' }}>Ingredients</h3>
+                <h3 className="font-display font-bold uppercase tracking-wide text-sm" style={{ color: 'var(--on-surface)' }}>Ingredients</h3>
               </div>
               <ul className="grid gap-2">
                 {recipe.ingredients.map((ing, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm" style={{ color: '#4A6A4A' }}>
+                  <li key={i} className="flex items-start gap-3 text-sm">
                     <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#2D5A2D' }} />
-                    {ing}
+                    {ing.amount && (
+                      <span className="flex-shrink-0 font-semibold text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--on-surface)' }}>
+                        {ing.amount}
+                      </span>
+                    )}
+                    <span style={{ color: 'var(--on-surface-muted)' }}>{ing.name}</span>
                   </li>
                 ))}
               </ul>
             </section>
 
             {/* Instructions */}
-            <section className="mb-8">
+            <section>
               <div className="flex items-center gap-2 mb-4">
                 <Flame size={18} style={{ color: '#2D5A2D' }} />
-                <h3 className="font-display font-bold uppercase tracking-wide text-sm" style={{ color: '#1C3A1C' }}>Instructions</h3>
+                <h3 className="font-display font-bold uppercase tracking-wide text-sm" style={{ color: 'var(--on-surface)' }}>Instructions</h3>
               </div>
-              <div className="markdown-body prose prose-sm max-w-none text-sm" style={{ color: '#4A6A4A' }}>
+              <div className="markdown-body prose prose-sm max-w-none text-sm" style={{ color: 'var(--on-surface-muted)' }}>
                 <Markdown>{recipe.instructions}</Markdown>
               </div>
             </section>
 
+            {/* Grocery List */}
+            {(() => {
+              const recipeItems = recipe.ingredients;
+              const itemKeys = recipeItems.map(i => `${i.amount}|${i.name}`);
+              const addedCount = itemKeys.filter(k => groceryList.includes(k)).length;
+              const allAdded = addedCount === recipeItems.length;
+              return (
+                <section>
+                  <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid var(--border)' }}>
+                    {/* Section header */}
+                    <div
+                      className="flex items-center justify-between px-5 py-4"
+                      style={{ backgroundColor: 'var(--surface-alt)' }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <ShoppingCart size={17} style={{ color: '#2D5A2D' }} />
+                        <h3 className="font-display font-bold uppercase tracking-wide text-sm" style={{ color: 'var(--on-surface)' }}>
+                          Grocery List
+                        </h3>
+                        {addedCount > 0 && (
+                          <span
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: '#2D472C', color: '#F5F0E8' }}
+                          >
+                            {addedCount}/{recipeItems.length}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => allAdded
+                          ? onGroceryClear(itemKeys)
+                          : itemKeys.forEach(k => { if (!groceryList.includes(k)) onGroceryToggle(k); })
+                        }
+                        className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full transition-all"
+                        style={allAdded
+                          ? { backgroundColor: 'var(--surface)', color: 'var(--on-surface)', border: '1px solid var(--border)' }
+                          : { backgroundColor: '#2D472C', color: '#F5F0E8' }}
+                      >
+                        {allAdded ? <Minus size={12} /> : <Plus size={12} />}
+                        {allAdded ? 'Remove all' : 'Add all'}
+                      </button>
+                    </div>
+
+                    {/* Ingredient rows */}
+                    <ul className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                      {recipeItems.map((ing, i) => {
+                        const key = itemKeys[i];
+                        const inList = groceryList.includes(key);
+                        return (
+                          <li key={i}>
+                            <button
+                              onClick={() => onGroceryToggle(key)}
+                              className="w-full flex items-center gap-3 px-5 py-3 text-sm text-left transition-all"
+                              style={{ backgroundColor: inList ? 'rgba(45,71,44,0.06)' : 'transparent' }}
+                            >
+                              {/* Checkbox */}
+                              <span
+                                className="flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center transition-all"
+                                style={inList
+                                  ? { backgroundColor: '#2D472C', border: '1.5px solid #2D472C' }
+                                  : { border: '1.5px solid var(--border)', backgroundColor: 'transparent' }}
+                              >
+                                {inList && <Check size={11} strokeWidth={3} color="#F5F0E8" />}
+                              </span>
+                              {/* Amount badge */}
+                              {ing.amount && (
+                                <span
+                                  className="flex-shrink-0 text-xs font-bold px-2 py-0.5 rounded-full"
+                                  style={{ backgroundColor: inList ? 'rgba(45,71,44,0.12)' : 'var(--surface-alt)', color: 'var(--on-surface)' }}
+                                >
+                                  {ing.amount}
+                                </span>
+                              )}
+                              <span
+                                style={{
+                                  color: inList ? 'var(--on-surface-muted)' : 'var(--on-surface)',
+                                  textDecoration: inList ? 'line-through' : 'none',
+                                  opacity: inList ? 0.6 : 1,
+                                }}
+                              >
+                                {ing.name}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </section>
+              );
+            })()}
+
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 pt-2 pb-2">
+            <div className="flex flex-wrap gap-2">
               {recipe.tags.map(tag => (
-                <span key={tag} className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#1C3A1C', opacity: 0.35 }}>
+                <span key={tag} className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--on-surface)', opacity: 0.35 }}>
                   #{tag}
                 </span>
               ))}
             </div>
+
+            </div>{/* end cream body */}
           </div>
         </motion.div>
       </div>

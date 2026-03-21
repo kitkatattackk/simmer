@@ -1,146 +1,93 @@
 import { Router, Request, Response } from 'express';
-import { GoogleGenAI, Type } from '@google/genai';
 import { prisma } from '../db';
 
 const router = Router();
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY ?? '' });
-
-function buildFilterKey(query: string, filters: Record<string, string>): string {
-  return JSON.stringify({
-    q: query.trim().toLowerCase(),
-    meat: filters.meatType ?? 'All',
-    spice: filters.spiciness ?? 'All',
-    diff: filters.difficulty ?? 'All',
-    time: filters.maxTime ?? 'All',
-    allergy: filters.allergy ?? 'No Allergy Filter',
-  });
-}
 
 function parseRecipe(r: any) {
-  return {
-    ...r,
-    ingredients: JSON.parse(r.ingredients),
-    tags: JSON.parse(r.tags),
-  };
+  const rawIngredients = JSON.parse(r.ingredients);
+  const ingredients = Array.isArray(rawIngredients) && typeof rawIngredients[0] === 'string'
+    ? (rawIngredients as string[]).map(s => {
+        const match = s.match(/^([\d\/\s\w.,-]+(?:cup|tbsp|tsp|oz|lb|g|kg|ml|l|clove|slice|piece|can|bunch|pinch|handful|dash|sprig|head|stalk|medium|large|small|whole|to taste)[s]?\.?\s+)?(.+)$/i);
+        return match
+          ? { amount: (match[1] || '').trim(), name: match[2].trim() }
+          : { amount: '', name: s };
+      })
+    : rawIngredients;
+  return { ...r, ingredients, tags: JSON.parse(r.tags) };
 }
 
-async function callGemini(prompt: string) {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            title: { type: Type.STRING },
-            description: { type: Type.STRING },
-            meatType: { type: Type.STRING },
-            spiciness: { type: Type.STRING, enum: ['Mild', 'Medium', 'Hot', 'Extra Hot'] },
-            prepTime: { type: Type.STRING },
-            difficulty: { type: Type.STRING, enum: ['Easy', 'Intermediate', 'Advanced'] },
-            ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
-            instructions: { type: Type.STRING },
-            tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-          },
-          required: ['id', 'title', 'description', 'meatType', 'spiciness', 'prepTime', 'difficulty', 'ingredients', 'instructions', 'tags'],
-        },
-      },
-    },
-  });
-  return JSON.parse(response.text ?? '[]');
+function parsePrepMinutes(prepTime: string): number {
+  let minutes = 0;
+  const hourMatch = prepTime.match(/(\d+)\s*hour/i);
+  const minMatch = prepTime.match(/(\d+)\s*min/i);
+  if (hourMatch) minutes += parseInt(hourMatch[1]) * 60;
+  if (minMatch) minutes += parseInt(minMatch[1]);
+  return minutes || 999;
 }
 
-async function storeRecipesForSearch(
-  query: string,
-  filtersKey: string,
-  recipes: any[],
-) {
-  // Upsert each recipe (Gemini may re-generate ones we already have)
-  for (const recipe of recipes) {
-    await prisma.recipe.upsert({
-      where: { id: recipe.id },
-      update: {},
-      create: {
-        id: recipe.id,
-        title: recipe.title,
-        description: recipe.description,
-        meatType: recipe.meatType,
-        spiciness: recipe.spiciness,
-        prepTime: recipe.prepTime,
-        difficulty: recipe.difficulty,
-        ingredients: JSON.stringify(recipe.ingredients),
-        instructions: recipe.instructions,
-        tags: JSON.stringify(recipe.tags),
-      },
-    });
-  }
+const MAX_TIME_MAP: Record<string, number> = {
+  'Under 15 mins': 15,
+  'Under 30 mins': 30,
+  'Under 60 mins': 60,
+};
 
-  // Create the search record and link recipes
-  const search = await prisma.search.upsert({
-    where: { query_filters: { query, filters: filtersKey } },
-    update: {},
-    create: { query, filters: filtersKey },
-  });
-
-  for (const recipe of recipes) {
-    await prisma.searchRecipe.upsert({
-      where: { searchId_recipeId: { searchId: search.id, recipeId: recipe.id } },
-      update: {},
-      create: { searchId: search.id, recipeId: recipe.id },
-    });
-  }
-}
+const ALLERGY_KEYWORDS: Record<string, string[]> = {
+  'Gluten-Free':    ['wheat', 'flour', 'gluten', 'barley', 'rye', 'bread', 'pasta', 'soy sauce'],
+  'Dairy-Free':     ['milk', 'cream', 'butter', 'cheese', 'yogurt', 'dairy'],
+  'Nut-Free':       ['nut', 'almond', 'walnut', 'peanut', 'cashew', 'pecan', 'hazelnut', 'pistachio'],
+  'Egg-Free':       ['egg', 'mayonnaise'],
+  'Shellfish-Free': ['shrimp', 'crab', 'lobster', 'clam', 'oyster', 'scallop', 'mussel'],
+  'Soy-Free':       ['soy', 'tofu', 'tempeh', 'miso', 'edamame'],
+  'Fish-Free':      ['fish', 'salmon', 'tuna', 'cod', 'tilapia', 'anchovy', 'halibut', 'sardine'],
+};
 
 // GET /api/recipes?query=...&meatType=...&spiciness=...&difficulty=...&maxTime=...&allergy=...&chef=...
 router.get('/', async (req: Request, res: Response) => {
   let { query = '', ...filters } = req.query as Record<string, string>;
 
-  // Chef filter overrides query — look up pre-seeded chef recipes
   if (filters.chef && filters.chef !== 'All Chefs') {
     query = filters.chef.toLowerCase();
     filters = { meatType: 'All', spiciness: 'All', difficulty: 'All', maxTime: 'All', allergy: 'No Allergy Filter' };
   }
 
-  const filtersKey = buildFilterKey(query, filters);
-
   try {
-    // 1. Check DB for this exact search
-    const cached = await prisma.search.findUnique({
-      where: { query_filters: { query: query.trim().toLowerCase(), filters: filtersKey } },
-      include: { recipes: { include: { recipe: true } } },
-    });
+    const where: any = {};
 
-    if (cached && cached.recipes.length > 0) {
-      return res.json(cached.recipes.map(sr => parseRecipe(sr.recipe)));
+    if (filters.meatType && filters.meatType !== 'All') where.meatType = filters.meatType;
+    if (filters.spiciness && filters.spiciness !== 'All') where.spiciness = filters.spiciness;
+    if (filters.difficulty && filters.difficulty !== 'All') where.difficulty = filters.difficulty;
+
+    const searchQuery = query === '__initial__' ? '' : query.trim();
+    if (searchQuery) {
+      where.OR = [
+        { title:       { contains: searchQuery } },
+        { description: { contains: searchQuery } },
+        { tags:        { contains: searchQuery } },
+        { ingredients: { contains: searchQuery } },
+      ];
     }
 
-    // 2. Cache miss — call Gemini
-    const filterDesc = Object.entries(filters)
-      .filter(([k, v]) => v && v !== 'All' && v !== 'None' && v !== 'No Allergy Filter')
-      .map(([k, v]) => `${k}: ${v}`)
-      .join(', ');
+    let recipes = await prisma.recipe.findMany({ where });
 
-    const allergyClause = filters.allergy && filters.allergy !== 'No Allergy Filter'
-      ? ` All recipes MUST be strictly ${filters.allergy} — exclude any ingredients that contain or may contain ${filters.allergy.replace('-Free', '').toLowerCase()}.`
-      : '';
+    // MaxTime: parse prepTime string in-memory
+    const maxMins = MAX_TIME_MAP[filters.maxTime];
+    if (maxMins) {
+      recipes = recipes.filter(r => parsePrepMinutes(r.prepTime) <= maxMins);
+    }
 
-    const searchClause = query.trim()
-      ? `matching the following search: "${query}"`
-      : 'that are diverse and delicious';
+    // Allergy: check against ingredient names in-memory
+    const allergyKeywords = ALLERGY_KEYWORDS[filters.allergy];
+    if (allergyKeywords) {
+      recipes = recipes.filter(r =>
+        !allergyKeywords.some(kw => r.ingredients.toLowerCase().includes(kw))
+      );
+    }
 
-    const isInitial = query === '__initial__';
-    const prompt = isInitial
-      ? 'Generate 12 diverse and delicious recipe ideas. Include a mix of meat types (Chicken, Beef, Pork, Seafood, Vegetarian) and spiciness levels. Make them sound appetizing and creative.'
-      : `Generate 8 recipes ${searchClause}. ${filterDesc ? `Strictly apply these filters: ${filterDesc}.` : ''}${allergyClause} Ensure variety and high quality. If "maxTime" is specified, ensure the prepTime is within that limit.`;
+    // Shuffle for variety on every request
+    recipes = recipes.sort(() => Math.random() - 0.5);
 
-    const recipes = await callGemini(prompt);
-    await storeRecipesForSearch(query.trim().toLowerCase(), filtersKey, recipes);
-
-    return res.json(recipes);
+    const limit = query === '__initial__' ? 12 : 8;
+    return res.json(recipes.slice(0, limit).map(parseRecipe));
   } catch (err: any) {
     console.error('[recipes]', err.message);
     return res.status(500).json({ error: err.message });

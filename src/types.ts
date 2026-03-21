@@ -6,7 +6,7 @@ export interface Recipe {
   spiciness: 'Mild' | 'Medium' | 'Hot' | 'Extra Hot';
   prepTime: string;
   difficulty: 'Easy' | 'Intermediate' | 'Advanced';
-  ingredients: string[];
+  ingredients: { name: string; amount: string }[];
   instructions: string;
   tags: string[];
 }

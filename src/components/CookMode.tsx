@@ -212,29 +212,33 @@ export const CookMode: React.FC<CookModeProps> = ({ recipe, onClose }) => {
       </div>
 
       {/* Step content */}
-      <div className={`flex-1 flex items-center justify-center px-6 md:px-16 overflow-hidden transition-opacity duration-300 ${done ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar transition-opacity duration-300 ${done ? 'opacity-0' : 'opacity-100'}`}>
         <AnimatePresence mode="wait" custom={direction}>
-          <motion.p
+          <motion.div
             key={step}
             custom={direction}
-            initial={{ opacity: 0, x: direction * 60 }}
+            initial={{ opacity: 0, x: direction * 50 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction * -60 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="text-center font-display font-bold uppercase leading-snug"
-            style={{
-              color: '#F5F0E8',
-              fontSize: 'clamp(1.4rem, 4vw, 2.8rem)',
-              maxWidth: '720px',
-            }}
+            exit={{ opacity: 0, x: direction * -50 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="flex items-center justify-center min-h-full px-8 md:px-24 py-6"
           >
-            {steps[step]}
-          </motion.p>
+            <p
+              className="text-center font-display font-bold uppercase leading-snug"
+              style={{
+                color: '#F5F0E8',
+                fontSize: 'clamp(1rem, 2.4vw, 1.75rem)',
+                maxWidth: '700px',
+              }}
+            >
+              {steps[step]}
+            </p>
+          </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Bottom controls */}
-      <div className={`flex-shrink-0 px-6 pb-10 pt-6 transition-opacity duration-300 ${done ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`flex-shrink-0 px-6 pt-4 transition-opacity duration-300 ${done ? 'opacity-0' : 'opacity-100'}`} style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
         {/* Timer */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <div
@@ -277,16 +281,16 @@ export const CookMode: React.FC<CookModeProps> = ({ recipe, onClose }) => {
           {isLast ? (
             <button
               onClick={handleDone}
-              className="flex-1 py-3.5 rounded-2xl font-display font-bold uppercase tracking-wider text-sm transition-all"
-              style={{ backgroundColor: '#A8D5A2', color: '#1C3A1C' }}
+              className="flex-1 py-3.5 rounded-2xl font-display font-bold uppercase tracking-wider text-sm transition-all hover:opacity-90 active:scale-95"
+              style={{ backgroundColor: '#F5F0E8', color: '#1C3A1C' }}
             >
               Done!
             </button>
           ) : (
             <button
               onClick={() => go(1)}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-display font-bold uppercase tracking-wider text-sm transition-all"
-              style={{ backgroundColor: '#A8D5A2', color: '#1C3A1C' }}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-display font-bold uppercase tracking-wider text-sm transition-all hover:opacity-90 active:scale-95"
+              style={{ backgroundColor: '#F5F0E8', color: '#1C3A1C' }}
             >
               Next Step
               <ChevronRight size={18} />

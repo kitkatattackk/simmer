@@ -2,11 +2,11 @@ import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 
 const LINES: { text: string; emphasis: string }[] = [
-  { text: 'FIND YOUR PERFECT', emphasis: '' },
-  { text: 'RECIPE.',           emphasis: 'R' },
-  { text: '- ALEX',            emphasis: 'X' },
+  { text: 'FIND YOUR',  emphasis: '' },
+  { text: 'PERFECT',   emphasis: 'P' },
+  { text: 'RECIPE.',   emphasis: 'R' },
 ];
-const MAX_ARC = 70;
+const MAX_ARC = 32;
 const SPRING = { type: 'spring' as const, stiffness: 90, damping: 14, mass: 0.9 };
 
 // Seeded pseudo-random so values are stable across renders
@@ -31,11 +31,11 @@ const WavyLine = ({ text, emphasis, mouseNorm, delay, seedOffset }: WavyLineProp
     chars.map((char, i) => {
       const loud = emphasis.toUpperCase().includes(char.toUpperCase()) && char.trim() !== '';
       return {
-        rotate: (seededRand(seedOffset + i * 3) - 0.5) * (loud ? 80 : 10),
+        rotate: (seededRand(seedOffset + i * 3) - 0.5) * (loud ? 22 : 8),
         scale:   loud
-          ? 0.75 + seededRand(seedOffset + i * 3 + 1) * 0.6
-          : 0.92 + seededRand(seedOffset + i * 3 + 1) * 0.16,
-        baseY:  (seededRand(seedOffset + i * 3 + 2) - 0.5) * (loud ? 48 : 14),
+          ? 0.9 + seededRand(seedOffset + i * 3 + 1) * 0.22
+          : 0.94 + seededRand(seedOffset + i * 3 + 1) * 0.12,
+        baseY:  (seededRand(seedOffset + i * 3 + 2) - 0.5) * (loud ? 16 : 10),
       };
     }),
   []);
@@ -46,19 +46,18 @@ const WavyLine = ({ text, emphasis, mouseNorm, delay, seedOffset }: WavyLineProp
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
       style={{
-        display: 'flex',
-        justifyContent: 'center',
+        display: 'block',
         fontFamily: '"Lilita One", sans-serif',
-        fontSize: 'clamp(2.5rem, 9.5vw, 10rem)',
-        color: '#2D6A2D',
-        lineHeight: 1.1,
+        fontSize: 'clamp(2rem, 10vw, 10rem)',
+        color: 'var(--hero-color)',
+        lineHeight: 1.25,
       }}
     >
       {chars.map((char, i) => {
         const t = n > 1 ? i / (n - 1) : 0.5;
         const arc = 0.35 + 0.65 * Math.sin(Math.PI * t);
         const loud = emphasis.toUpperCase().includes(char.toUpperCase()) && char.trim() !== '';
-        const yOffset = jitter[i].baseY + (mouseNorm - 0.5) * MAX_ARC * arc * (loud ? 3.5 : 1);
+        const yOffset = jitter[i].baseY + (mouseNorm - 0.5) * MAX_ARC * arc * (loud ? 1.8 : 1);
 
         return (
           <motion.span
@@ -84,21 +83,29 @@ export const WavyHero = () => {
 
   useEffect(() => {
     let raf: number;
-    const handle = (e: MouseEvent) => {
+    const handleMouse = (e: MouseEvent) => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() =>
         setMouseNorm(e.clientY / window.innerHeight)
       );
     };
-    window.addEventListener('mousemove', handle);
+    const handleTouch = (e: TouchEvent) => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() =>
+        setMouseNorm(e.touches[0].clientY / window.innerHeight)
+      );
+    };
+    window.addEventListener('mousemove', handleMouse);
+    window.addEventListener('touchmove', handleTouch, { passive: true });
     return () => {
-      window.removeEventListener('mousemove', handle);
+      window.removeEventListener('mousemove', handleMouse);
+      window.removeEventListener('touchmove', handleTouch);
       cancelAnimationFrame(raf);
     };
   }, []);
 
   return (
-    <h1 className="leading-none mb-10" style={{ overflow: 'visible' }}>
+    <h1 className="mb-10" style={{ overflow: 'visible', textAlign: 'center' }}>
       {LINES.map(({ text, emphasis }, i) => (
         <WavyLine key={text} text={text} emphasis={emphasis} mouseNorm={mouseNorm} delay={i * 0.15} seedOffset={i * 100} />
       ))}

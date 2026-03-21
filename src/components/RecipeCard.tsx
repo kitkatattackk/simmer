@@ -110,7 +110,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, isSaved, onSaveT
 
       <div
         className="rounded-2xl p-5 border transition-shadow duration-200 group-hover:shadow-lg"
-        style={{ backgroundColor: '#fff', borderColor: 'rgba(28,58,28,0.12)' }}
+        style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
       >
         {/* Top row: badges + actions */}
         <div className="flex items-start justify-between gap-2 mb-4">
@@ -136,7 +136,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, isSaved, onSaveT
             </span>
             <span
               className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
-              style={{ backgroundColor: '#EDE7D9', color: '#1C3A1C' }}
+              style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--on-surface)' }}
             >
               {recipe.meatType}
             </span>
@@ -147,7 +147,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, isSaved, onSaveT
               <button
                 onClick={handleSave}
                 className="p-1.5 rounded-full transition-colors"
-                style={{ color: isSaved ? '#c0392b' : '#1C3A1C', opacity: isSaved ? 1 : 0.35 }}
+                style={{ color: isSaved ? '#c0392b' : 'var(--on-surface)', opacity: isSaved ? 1 : 0.35 }}
               >
                 <Heart size={15} fill={isSaved ? 'currentColor' : 'none'} />
               </button>
@@ -181,7 +181,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, isSaved, onSaveT
             <button
               onClick={handleShare}
               className="p-1.5 rounded-full transition-colors"
-              style={{ color: copied ? '#2D5A2D' : '#1C3A1C', opacity: copied ? 1 : 0.35 }}
+              style={{ color: copied ? '#2D5A2D' : 'var(--on-surface)', opacity: copied ? 1 : 0.35 }}
             >
               {copied ? <Check size={15} /> : <Share2 size={15} />}
             </button>
@@ -191,18 +191,18 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, isSaved, onSaveT
         {/* Title */}
         <h3
           className="font-display font-bold uppercase leading-tight mb-2 transition-colors"
-          style={{ fontSize: '1.05rem', color: '#1C3A1C' }}
+          style={{ fontSize: '1.05rem', color: 'var(--on-surface)' }}
         >
           {recipe.title}
         </h3>
 
         {/* Description */}
-        <p className="text-sm leading-relaxed line-clamp-2 mb-5" style={{ color: '#4A6A4A' }}>
+        <p className="text-sm leading-relaxed line-clamp-2 mb-5" style={{ color: 'var(--on-surface-muted)' }}>
           {recipe.description}
         </p>
 
         {/* Footer */}
-        <div className="flex items-center justify-between text-xs font-medium" style={{ color: '#1C3A1C', opacity: 0.5 }}>
+        <div className="flex items-center justify-between text-xs font-medium" style={{ color: 'var(--on-surface)', opacity: 0.5 }}>
           <span className="flex items-center gap-1.5">
             <Clock size={12} />
             {recipe.prepTime}

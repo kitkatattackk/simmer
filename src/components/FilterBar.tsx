@@ -9,8 +9,8 @@ interface FilterBarProps {
   isLoading: boolean;
 }
 
-const selectClass = "appearance-none bg-white border rounded-full px-4 py-2 text-sm font-medium outline-none cursor-pointer transition-all";
-const selectStyle = { borderColor: '#1C3A1C', color: '#1C3A1C' };
+const selectClass = "appearance-none border rounded-full px-4 py-2 text-sm font-medium outline-none cursor-pointer transition-all flex-shrink-0";
+const selectStyle = { borderColor: 'var(--on-surface)', color: 'var(--on-surface)', backgroundColor: 'var(--surface)' };
 
 export const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, onSearch, isLoading }) => {
   const meatTypes = ['All', 'Chicken', 'Beef', 'Pork', 'Seafood', 'Vegetarian', 'Lamb'];
@@ -25,12 +25,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, onSea
       {/* Search row */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2" size={18} style={{ color: '#1C3A1C', opacity: 0.5 }} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2" size={18} style={{ color: 'var(--on-surface)', opacity: 0.5 }} />
           <input
             type="text"
             placeholder="Search recipes…"
-            className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm font-medium outline-none border-2 bg-white transition-all"
-            style={{ borderColor: '#1C3A1C', color: '#1C3A1C' }}
+            className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm font-medium outline-none border-2 transition-all"
+            style={{ borderColor: 'var(--on-surface)', color: 'var(--on-surface)', backgroundColor: 'var(--surface)' }}
             value={filters.searchQuery}
             onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
             onKeyDown={(e) => e.key === 'Enter' && !isLoading && onSearch()}
@@ -47,8 +47,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, onSea
         </button>
       </div>
 
-      {/* Filter pills */}
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+      {/* Filter pills — scrollable on mobile */}
+      <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-x-visible" style={{ scrollbarWidth: 'none' }}>
         <select className={selectClass} style={selectStyle} value={filters.meatType} onChange={(e) => setFilters(prev => ({ ...prev, meatType: e.target.value }))} disabled={isLoading}>
           {meatTypes.map(t => <option key={t} value={t}>{t === 'All' ? 'All Proteins' : t}</option>)}
         </select>
@@ -67,7 +67,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, onSea
         <select
           className={selectClass}
           style={filters.chef !== 'All Chefs'
-            ? { ...selectStyle, backgroundColor: '#1C3A1C', color: '#F5F0E8', borderColor: '#1C3A1C' }
+            ? { backgroundColor: '#1C3A1C', color: '#F5F0E8', borderColor: '#1C3A1C' }
             : selectStyle}
           value={filters.chef}
           onChange={(e) => setFilters(prev => ({ ...prev, chef: e.target.value }))}

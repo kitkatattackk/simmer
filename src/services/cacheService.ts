@@ -51,5 +51,5 @@ export function setCached(query: string, filters: FilterState, recipes: Recipe[]
 export const INITIAL_CACHE_QUERY = '__initial__';
 export const BLANK_FILTERS: FilterState = {
   meatType: 'All', spiciness: 'All', difficulty: 'All',
-  maxTime: 'All', searchQuery: '', allergy: 'No Allergy Filter',
+  maxTime: 'All', searchQuery: '', allergy: 'No Allergy Filter', chef: 'All Chefs',
 };
