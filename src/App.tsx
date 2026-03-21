@@ -12,6 +12,7 @@ import { SearchChips } from './components/SearchChips';
 import { SkeletonCard } from './components/SkeletonCard';
 import { Bookmark, Settings, UtensilsCrossed, Flame, ChefHat } from 'lucide-react';
 import { CookMode } from './components/CookMode';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 type View = 'discover' | 'saved' | 'cook';
 
@@ -50,6 +51,10 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
     localStorage.setItem('darkMode', String(darkMode));
+    // Sync Android status bar style with dark mode
+    StatusBar.setStyle({ style: darkMode ? Style.Dark : Style.Light }).catch(() => {});
+    StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+    StatusBar.setBackgroundColor({ color: darkMode ? '#141814' : '#F5F0E8' }).catch(() => {});
   }, [darkMode]);
 
   const handleSaveSettings = (prefs: string[]) => {
@@ -127,11 +132,13 @@ export default function App() {
 
       {/* Top Nav */}
       <nav
-        className="sticky top-0 z-40 flex items-center justify-between px-4 md:px-10 h-14 md:h-16"
+        className="sticky top-0 z-40 flex items-center justify-between px-4 md:px-10"
         style={{
           backgroundColor: 'var(--nav-bg)',
           backdropFilter: 'blur(20px)',
           borderBottom: '1px solid var(--border)',
+          paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
+          paddingBottom: '0.75rem',
           paddingLeft: 'max(1rem, env(safe-area-inset-left))',
           paddingRight: 'max(1rem, env(safe-area-inset-right))',
         }}
@@ -306,9 +313,9 @@ export default function App() {
             {displayedRecipes.map((recipe, i) => (
               <motion.div
                 key={recipe.id}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease: 'easeOut', delay: Math.min(i * 0.06, 0.5) }}
+                transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94], delay: Math.min(i * 0.04, 0.3) }}
               >
                 <RecipeCard
                   recipe={recipe}

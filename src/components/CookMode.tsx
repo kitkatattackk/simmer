@@ -220,7 +220,7 @@ export const CookMode: React.FC<CookModeProps> = ({ recipe, onClose }) => {
             initial={{ opacity: 0, x: direction * 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: direction * -50 }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
+            transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="flex items-center justify-center min-h-full px-8 md:px-24 py-6"
           >
             <p
